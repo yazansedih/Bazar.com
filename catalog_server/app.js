@@ -53,6 +53,19 @@ app.put("/api/v1/update", (req, res) => {
   }
 });
 
+// Update cost
+app.put("/api/v1/update/cost", (req, res) => {
+  const { id, cost } = req.body;
+  const book = books.find((book) => book.id === id);
+
+  if (book) {
+    book.cost = cost;
+    res.json({ message: "Cost updated.👍", book });
+  } else {
+    res.status(404).json({ message: "Book not found.💥" });
+  }
+});
+
 // Reduce stock
 app.patch("/api/v1/reduce", (req, res) => {
   const { id } = req.body;

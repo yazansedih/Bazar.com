@@ -51,10 +51,28 @@ app.put("/api/v1/update", async (req, res) => {
   const { id, stock } = req.body;
 
   try {
-    const response = await axios.put(`${ORDER_SERVER_URL}/api/v1/update`, {
+    const response = await axios.put(`${CATALOG_SERVER_URL}/api/v1/update`, {
       id,
       stock,
     });
+    res.json(response.data);
+  } catch (error) {
+    res.status(500).json({ message: "Error processing update.💥" });
+  }
+});
+
+// Update cost
+app.put("/api/v1/update/cost", async (req, res) => {
+  const { id, cost } = req.body;
+  6;
+  try {
+    const response = await axios.put(
+      `${CATALOG_SERVER_URL}/api/v1/update/cost`,
+      {
+        id,
+        cost,
+      }
+    );
     res.json(response.data);
   } catch (error) {
     res.status(500).json({ message: "Error processing update.💥" });
