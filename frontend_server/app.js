@@ -1,52 +1,62 @@
 const express = require("express");
 const axios = require("axios"); // For making HTTP requests to other services
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 
 app.use(express.json());
 
-// Catalog and Order server URLs (you may need to adjust these based on your deployment)
-const CATALOG_SERVER_URL = "http://localhost:8081"; // Assuming catalog server runs on port 8081
-const ORDER_SERVER_URL = "http://localhost:8082"; // Assuming order server runs on port 8082
+const CATALOG_SERVER_URL = "http://localhost:8081";
+const ORDER_SERVER_URL = "http://localhost:8082";
 
-app.get("/bazar", async (req, res) => {
-  res.send("Welcome to Bazar from fronend server   :)");
+app.get("/api/v1/bazar", async (req, res) => {
+  res.status(200).json("Welcome to Bazar from fronend server.😁");
 });
 
 // Search books by topic
-app.get("/search", async (req, res) => {
-  const topic = req.query.topic;
+app.get("/api/v1/search", async (req, res) => {
+  const { title, topic } = req.query;
+  let results = [];
+
   try {
-    const response = await axios.get(`${CATALOG_SERVER_URL}/search/${topic}`);
-    res.json(response.data);
+    if (title) {
+      results = await axios.get(
+        `${CATALOG_SERVER_URL}/api/v1/search?title=${encodeURIComponent(title)}`
+      );
+    } else if (topic) {
+      results = await axios.get(
+        `${CATALOG_SERVER_URL}/api/v1/search?topic=${encodeURIComponent(topic)}`
+      );
+    }
+
+    res.json(results.data);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching search results" });
+    res.status(500).json({ message: "Error fetching search results.💥" });
   }
 });
 
-// Get book information by item number
-app.get("/info/:id", async (req, res) => {
-  const itemNumber = req.params.item_number;
+// Get book information by item id
+app.get("/api/v1/info/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+
+  try {
+    const response = await axios.get(`${CATALOG_SERVER_URL}/api/v1/info/${id}`);
+    res.json(response.data);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching book information.💥" });
+  }
+});
+
+// Purchase a book by item id
+app.get("/api/v1/purchase/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+
   try {
     const response = await axios.get(
-      `${CATALOG_SERVER_URL}/info/${itemNumber}`
+      `${ORDER_SERVER_URL}/api/v1/purchase/${id}`
     );
     res.json(response.data);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching book information" });
-  }
-});
-
-// Purchase a book by item number
-app.post("/purchase/:id", async (req, res) => {
-  const itemNumber = req.params.item_number;
-  try {
-    const response = await axios.post(
-      `${ORDER_SERVER_URL}/purchase/${itemNumber}`
-    );
-    res.json(response.data);
-  } catch (error) {
-    res.status(500).json({ message: "Error processing purchase" });
+    res.status(500).json({ message: "Error processing purchase.💥" });
   }
 });
 
