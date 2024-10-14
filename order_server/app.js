@@ -13,7 +13,7 @@ app.get("/api/v1/bazar", async (req, res) => {
 });
 
 // Purchase a book
-app.get("/api/v1/purchase/:id", async (req, res) => {
+app.post("/api/v1/purchase/:id", async (req, res) => {
   const id = parseInt(req.params.id);
   console.log("Requested Book ID:", id);
 

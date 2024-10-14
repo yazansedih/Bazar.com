@@ -62,11 +62,11 @@ app.put("/api/v1/update", async (req, res) => {
 });
 
 // Purchase a book by item id
-app.get("/api/v1/purchase/:id", async (req, res) => {
+app.post("/api/v1/purchase/:id", async (req, res) => {
   const id = parseInt(req.params.id);
 
   try {
-    const response = await axios.get(
+    const response = await axios.post(
       `${ORDER_SERVER_URL}/api/v1/purchase/${id}`
     );
     res.json(response.data);
