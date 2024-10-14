@@ -46,6 +46,21 @@ app.get("/api/v1/info/:id", async (req, res) => {
   }
 });
 
+// Update stock
+app.put("/api/v1/update", async (req, res) => {
+  const { id, stock } = req.body;
+
+  try {
+    const response = await axios.put(`${ORDER_SERVER_URL}/api/v1/update`, {
+      id,
+      stock,
+    });
+    res.json(response.data);
+  } catch (error) {
+    res.status(500).json({ message: "Error processing update.💥" });
+  }
+});
+
 // Purchase a book by item id
 app.get("/api/v1/purchase/:id", async (req, res) => {
   const id = parseInt(req.params.id);
