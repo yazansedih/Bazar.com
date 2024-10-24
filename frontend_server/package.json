@@ -25,6 +25,7 @@
     "socket.io": "^4.7.4"
   },
   "devDependencies": {
+    "express": "^4.17.1",
     "nodemon": "^3.0.3"
   }
 }

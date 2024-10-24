@@ -1,7 +1,7 @@
 const express = require("express");
 const axios = require("axios"); // For querying the catalog server
 const app = express();
-const PORT = 8082;
+const PORT = 8081;
 
 app.use(express.json());
 
@@ -29,7 +29,7 @@ app.post("/api/v1/purchase/:id", async (req, res) => {
       // Decrement stock
       await axios.patch(`${CATALOG_SERVER_URL}/api/v1/reduce`, {
         id: id,
-        stock: -1,
+        stock: -1,  
       });
       res.json({ message: "Purchase successful.😁" });
     } else {

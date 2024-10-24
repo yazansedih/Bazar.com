@@ -1,12 +1,12 @@
 const express = require("express");
 const axios = require("axios"); // For making HTTP requests to other services
 const app = express();
-const PORT = 3000;
+const PORT = 8082;
 
 app.use(express.json());
 
-const CATALOG_SERVER_URL = "http://localhost:8081";
-const ORDER_SERVER_URL = "http://localhost:8082";
+const CATALOG_SERVER_URL = "http://localhost:3000";
+const ORDER_SERVER_URL = "http://localhost:8081";
 
 app.get("/api/v1/bazar", async (req, res) => {
   res.status(200).json("Welcome to Bazar from fronend server.😁");
@@ -95,5 +95,5 @@ app.post("/api/v1/purchase/:id", async (req, res) => {
 
 // Start the front-end server
 app.listen(PORT, () => {
-  console.log(`Front-end server is running on port ${PORT}`);
+  console.log(`Frontend server is running on port ${PORT}`);
 });
