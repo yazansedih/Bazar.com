@@ -6,7 +6,7 @@ const PORT = 8081;
 app.use(express.json());
 
 // Catalog server URL
-const CATALOG_SERVER_URL = "http://localhost:8081";
+const CATALOG_SERVER_URL = "http://catalog-server:3000";
 
 app.get("/api/v1/bazar", async (req, res) => {
   res.status(200).json("Welcome to Bazar from order server.😁");
@@ -15,7 +15,6 @@ app.get("/api/v1/bazar", async (req, res) => {
 // Purchase a book
 app.post("/api/v1/purchase/:id", async (req, res) => {
   const id = parseInt(req.params.id);
-  console.log("Requested Book ID:", id);
 
   try {
     const response = await axios.get(`${CATALOG_SERVER_URL}/api/v1/info/${id}`);
@@ -29,7 +28,7 @@ app.post("/api/v1/purchase/:id", async (req, res) => {
       // Decrement stock
       await axios.patch(`${CATALOG_SERVER_URL}/api/v1/reduce`, {
         id: id,
-        stock: -1,  
+        stock: -1,
       });
       res.json({ message: "Purchase successful.😁" });
     } else {

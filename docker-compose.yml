@@ -10,14 +10,6 @@ services:
       - "3000:3000"
     networks:
       - bazar-network
-    # Uncomment to persist data if needed
-    # volumes:
-    #   - ./catalog_server:/catalog_server:ro
-    # healthcheck:
-    #   test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/bazar"]
-    #   interval: 30s
-    #   timeout: 5s
-    #   retries: 3
 
   order-server:
     build:
@@ -28,11 +20,6 @@ services:
       - "8081:8081"
     networks:
       - bazar-network
-    # healthcheck:
-    #   test: ["CMD", "curl", "-f", "http://localhost:8081/api/v1/bazar"]
-    #   interval: 30s
-    #   timeout: 5s
-    #   retries: 3
 
   frontend-server:
     build:
@@ -43,14 +30,6 @@ services:
       - "8082:8082"
     networks:
       - bazar-network
-    # Uncomment to persist data if needed
-    # volumes:
-    #   - ./frontend_server:/frontend_server:ro
-    # healthcheck:
-    #   test: ["CMD", "curl", "-f", "http://localhost:8082/api/v1/bazar"]
-    #   interval: 30s
-    #   timeout: 5s
-    #   retries: 3
 
 networks:
   bazar-network:

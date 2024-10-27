@@ -5,8 +5,8 @@ const PORT = 8082;
 
 app.use(express.json());
 
-const CATALOG_SERVER_URL = "http://localhost:3000";
-const ORDER_SERVER_URL = "http://localhost:8081";
+const CATALOG_SERVER_URL = "http://catalog-server:3000";
+const ORDER_SERVER_URL = "http://order-server:8081";
 
 app.get("/api/v1/bazar", async (req, res) => {
   res.status(200).json("Welcome to Bazar from fronend server.😁");
