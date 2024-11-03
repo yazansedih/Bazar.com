@@ -2,7 +2,6 @@ const express = require("express");
 const axios = require("axios"); // For querying the catalog server
 const app = express();
 const PORT = 8081;
-
 app.use(express.json());
 
 // Catalog server URL

@@ -7,9 +7,12 @@ services:
       dockerfile: Dockerfile
     image: catalog-server-image:1.0
     ports:
-      - "3000:3000"
+      - "3000:3000" # First replica
+      - "3001:3000" # Second replica
     networks:
       - bazar-network
+    deploy:
+      replicas: 2
 
   order-server:
     build:
@@ -17,9 +20,12 @@ services:
       dockerfile: Dockerfile
     image: order-server-image:1.0
     ports:
-      - "8081:8081"
+      - "8081:8081" # First replica
+      - "8082:8081" # Second replica
     networks:
       - bazar-network
+    deploy:
+      replicas: 2
 
   frontend-server:
     build:
@@ -30,7 +36,10 @@ services:
       - "8082:8082"
     networks:
       - bazar-network
+    depends_on:
+      - catalog-server
+      - order-server
 
 networks:
   bazar-network:
-    external: false
+    driver: bridge
