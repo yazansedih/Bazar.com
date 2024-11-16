@@ -1,4 +1,5 @@
 import express from "express";
+import axios from "axios"; // Add axios to send HTTP requests to replicas
 import books from "./database.js";
 
 const app = express();
@@ -41,43 +42,73 @@ app.get("/api/v1/info/:id", (req, res) => {
 });
 
 // Update stock
-app.put("/api/v1/update", (req, res) => {
+app.put("/api/v1/update", async (req, res) => {
   const { id, stock } = req.body;
   const book = books.find((book) => book.id === id);
 
   if (book) {
     book.stock = stock;
-    res.json({ message: "Stock updated.👍", book });
+
+    // Synchronize update with other replicas
+    await syncWithReplicas(id, stock);
+
+    res.json({ message: "Stock updated and synchronized.👍", book });
   } else {
     res.status(404).json({ message: "Book not found.💥" });
   }
 });
 
 // Update cost
-app.put("/api/v1/update/cost", (req, res) => {
+app.put("/api/v1/update/cost", async (req, res) => {
   const { id, cost } = req.body;
   const book = books.find((book) => book.id === id);
 
   if (book) {
     book.cost = cost;
-    res.json({ message: "Cost updated.👍", book });
+
+    // Synchronize update with other replicas
+    await syncWithReplicas(id, cost);
+
+    res.json({ message: "Cost updated and synchronized.👍", book });
   } else {
     res.status(404).json({ message: "Book not found.💥" });
   }
 });
 
 // Reduce stock
-app.patch("/api/v1/reduce", (req, res) => {
+app.patch("/api/v1/reduce", async (req, res) => {
   const { id } = req.body;
   const book = books.find((book) => book.id === id);
 
   if (book) {
     book.stock = book.stock - 1;
-    res.json({ message: "Stock reduced.👍", book });
+
+    // Synchronize the reduced stock with other replicas
+    await syncWithReplicas(id, book.stock);
+
+    res.json({ message: "Stock reduced and synchronized.👍", book });
   } else {
     res.status(404).json({ message: "Book not found.💥" });
   }
 });
+
+// Sync the update across replicas
+const syncWithReplicas = async (id, stock) => {
+  const otherReplicas = [
+    "http://catalog-server-1:3001",
+    "http://catalog-server-2:3002",
+  ];
+
+  // Send the update to other replicas
+  for (let replica of otherReplicas) {
+    try {
+      await axios.put(`${replica}/api/v1/update`, { id, stock });
+      console.log(`Synchronized update with ${replica}`);
+    } catch (error) {
+      console.error("Error synchronizing with replica:", error.message);
+    }
+  }
+};
 
 // Start the catalog server
 app.listen(PORT, () => {
