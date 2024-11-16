@@ -1,17 +1,64 @@
+# version: "3.1"
+
+# services:
+#   catalog-server:
+#     build:
+#       context: ./catalog_server
+#       dockerfile: Dockerfile
+#     image: catalog-server-image:1.0
+#     ports:
+#       - "3000:3000"
+#     networks:
+#       - bazar-network
+
+#   order-server:
+#     build:
+#       context: ./order_server
+#       dockerfile: Dockerfile
+#     image: order-server-image:1.0
+#     ports:
+#       - "8081:8081"
+#     networks:
+#       - bazar-network
+
+#   frontend-server:
+#     build:
+#       context: ./frontend_server
+#       dockerfile: Dockerfile
+#     image: frontend-server-image:1.0
+#     ports:
+#       - "8082:8082"
+#     networks:
+#       - bazar-network
+
+# networks:
+#   bazar-network:
+#     external: false
+
 version: "3.1"
 
 services:
-  catalog-server:
+  catalog-server-1:
     build:
       context: ./catalog_server
       dockerfile: Dockerfile
     image: catalog-server-image:1.0
     ports:
-      - "3000:3000"
+      - "3001:3000"
     networks:
       - bazar-network
 
-  order-server:
+  catalog-server-2:
+    build:
+      context: ./catalog_server
+      dockerfile: Dockerfile
+    image: catalog-server-image:1.0
+    ports:
+      - "3002:3000"
+    networks:
+      - bazar-network
+
+  order-server-1:
     build:
       context: ./order_server
       dockerfile: Dockerfile
@@ -21,13 +68,23 @@ services:
     networks:
       - bazar-network
 
+  order-server-2:
+    build:
+      context: ./order_server
+      dockerfile: Dockerfile
+    image: order-server-image:1.0
+    ports:
+      - "8082:8081"
+    networks:
+      - bazar-network
+
   frontend-server:
     build:
       context: ./frontend_server
       dockerfile: Dockerfile
     image: frontend-server-image:1.0
     ports:
-      - "8082:8082"
+      - "8083:8082"
     networks:
       - bazar-network
 

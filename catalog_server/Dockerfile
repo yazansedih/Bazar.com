@@ -13,3 +13,4 @@ EXPOSE 3000
 
 CMD ["npm","start" ]
 
+RUN npm cache clean --force && npm install
