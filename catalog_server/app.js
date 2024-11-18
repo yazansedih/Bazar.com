@@ -1,116 +1,144 @@
+import mongoose from "mongoose";
 import express from "express";
-import axios from "axios"; // Add axios to send HTTP requests to replicas
-import books from "./database.js";
+import dotenv from "dotenv";
+import Book from "./models/bookModel.js";
+
+dotenv.config();
 
 const app = express();
-const PORT = 3000;
-
 app.use(express.json());
 
-app.get("/api/v1/bazar", async (req, res) => {
+const DB = process.env.DATABASE.replace(
+  "<PASSWORD>",
+  process.env.DATABASE_PASSWORD
+);
+
+mongoose
+  .connect(DB)
+  .then(() => {
+    console.log("DB connection successful!");
+  })
+  .catch((err) => {
+    console.error("Error connecting to DB:", err);
+  });
+
+app.get("/api/v1/bazar", (req, res) => {
   res.status(200).json("Welcome to Bazar from catalog server.😁");
 });
 
-// Query by title or topic using query
-app.get("/api/v1/search", (req, res) => {
-  const { title, topic } = req.query;
-  let results = [];
-
-  if (title) {
-    results = books.filter(
-      (book) => book.title.toLowerCase() === title.toLowerCase()
-    );
-  } else if (topic) {
-    results = books.filter(
-      (book) => book.topic.toLowerCase() === topic.toLowerCase()
-    );
-  }
-
-  res.json(results);
+app.post("/api/v1/books", async (req, res) => {
+  const newBook = await Book.create({
+    title: req.body.title,
+    stock: req.body.stock,
+    cost: req.body.cost,
+    topic: req.body.topic,
+  });
+  res.status(201).json({
+    message: "New book added successfully.",
+    book: newBook,
+  });
 });
 
-// Query by id
-app.get("/api/v1/info/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  const book = books.find((book) => book.id === id);
+app.get("/api/v1/allBooks", async (req, res) => {
+  try {
+    const books = await Book.find();
+    res.status(200).json(books);
+  } catch (error) {
+    console.error("Error fetching books:", error);
+    res.status(500).json({ message: "Error fetching books.💥" });
+  }
+});
 
-  if (book) {
+// Search books by title or topic
+app.get("/api/v1/search", async (req, res) => {
+  const { title, topic } = req.query;
+
+  try {
+    const results = title
+      ? await Book.find({ title: new RegExp(`^${title}$`, "i") })
+      : topic
+      ? await Book.find({ topic: new RegExp(`^${topic}$`, "i") })
+      : [];
+    res.json(results);
+  } catch (error) {
+    console.error("Error fetching books by search:", error);
+    res.status(500).json({ message: "Error fetching books.💥" });
+  }
+});
+
+// Get book information by ID
+app.get("/api/v1/info/:id", async (req, res) => {
+  const bookId = req.params.id;
+
+  try {
+    const book = await Book.findById(bookId);
+
+    if (!book) {
+      return res.status(404).json({ message: "Book not found" });
+    }
+
     res.json(book);
-  } else {
-    res.status(404).json({ message: "Book not found.💥" });
+  } catch (error) {
+    console.error("Error fetching book info:", error);
+    res.status(500).json({ message: "Error fetching book information" });
   }
 });
 
 // Update stock
 app.put("/api/v1/update", async (req, res) => {
   const { id, stock } = req.body;
-  const book = books.find((book) => book.id === id);
 
-  if (book) {
-    book.stock = stock;
-
-    // Synchronize update with other replicas
-    await syncWithReplicas(id, stock);
-
-    res.json({ message: "Stock updated and synchronized.👍", book });
-  } else {
-    res.status(404).json({ message: "Book not found.💥" });
+  try {
+    const book = await Book.findByIdAndUpdate(id, { stock }, { new: true });
+    if (book) {
+      res.json({ message: "Stock updated.👍", book });
+    } else {
+      res.status(404).json({ message: "Book not found.💥" });
+    }
+  } catch (error) {
+    console.error("Error updating stock:", error);
+    res.status(500).json({ message: "Error updating stock.💥" });
   }
 });
 
 // Update cost
 app.put("/api/v1/update/cost", async (req, res) => {
   const { id, cost } = req.body;
-  const book = books.find((book) => book.id === id);
 
-  if (book) {
-    book.cost = cost;
-
-    // Synchronize update with other replicas
-    await syncWithReplicas(id, cost);
-
-    res.json({ message: "Cost updated and synchronized.👍", book });
-  } else {
-    res.status(404).json({ message: "Book not found.💥" });
+  try {
+    const book = await Book.findByIdAndUpdate(id, { cost }, { new: true });
+    if (book) {
+      res.json({ message: "Cost updated.👍", book });
+    } else {
+      res.status(404).json({ message: "Book not found.💥" });
+    }
+  } catch (error) {
+    console.error("Error updating cost:", error);
+    res.status(500).json({ message: "Error updating cost.💥" });
   }
 });
 
 // Reduce stock
 app.patch("/api/v1/reduce", async (req, res) => {
   const { id } = req.body;
-  const book = books.find((book) => book.id === id);
 
-  if (book) {
-    book.stock = book.stock - 1;
-
-    // Synchronize the reduced stock with other replicas
-    await syncWithReplicas(id, book.stock);
-
-    res.json({ message: "Stock reduced and synchronized.👍", book });
-  } else {
-    res.status(404).json({ message: "Book not found.💥" });
+  try {
+    const book = await Book.findById(id);
+    if (book) {
+      book.stock -= 1;
+      await book.save();
+      res.json({ message: "Stock reduced.👍", book });
+    } else {
+      res.status(404).json({ message: "Book not found.💥" });
+    }
+  } catch (error) {
+    console.error("Error reducing stock:", error);
+    res.status(500).json({ message: "Error reducing stock.💥" });
   }
 });
 
-// Sync the update across replicas
-const syncWithReplicas = async (id, stock) => {
-  const otherReplicas = [
-    "http://catalog-server-1:3001",
-    "http://catalog-server-2:3002",
-  ];
-
-  // Send the update to other replicas
-  for (let replica of otherReplicas) {
-    try {
-      await axios.put(`${replica}/api/v1/update`, { id, stock });
-      console.log(`Synchronized update with ${replica}`);
-    } catch (error) {
-      console.error("Error synchronizing with replica:", error.message);
-    }
-  }
-};
-
-// Start the catalog server
-app.listen(PORT, () => {
-  console.log(`Catalog server is running on port ${PORT}`);
+// export default app;
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Catalog server is running on port ${port}...`);
 });

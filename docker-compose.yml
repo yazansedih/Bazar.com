@@ -4,58 +4,55 @@ services:
   catalog-server-1:
     build:
       context: ./catalog_server
-      dockerfile: Dockerfile
     image: catalog-server-image:1.0
     ports:
       - "3001:3000"
+    volumes:
+      - ./catalog_server:/app
     networks:
-      bazar-network:
-        aliases:
-          - catalog-server-1
+      - bazar-network
 
   catalog-server-2:
     build:
       context: ./catalog_server
-      dockerfile: Dockerfile
     image: catalog-server-image:1.0
     ports:
       - "3002:3000"
+    volumes:
+      - ./catalog_server:/app
     networks:
-      bazar-network:
-        aliases:
-          - catalog-server-2
+      - bazar-network
 
   order-server-1:
     build:
       context: ./order_server
-      dockerfile: Dockerfile
     image: order-server-image:1.0
     ports:
       - "8081:8081"
+    volumes:
+      - ./order_server:/app
     networks:
-      bazar-network:
-        aliases:
-          - order-server-1
+      - bazar-network
 
   order-server-2:
     build:
       context: ./order_server
-      dockerfile: Dockerfile
     image: order-server-image:1.0
     ports:
       - "8082:8081"
+    volumes:
+      - ./order_server:/app
     networks:
-      bazar-network:
-        aliases:
-          - order-server-2
+      - bazar-network
 
   frontend-server:
     build:
       context: ./frontend_server
-      dockerfile: Dockerfile
     image: frontend-server-image:1.0
     ports:
-      - "8082:8082"
+      - "8083:8082"
+    volumes:
+      - ./frontend_server:/app
     networks:
       bazar-network:
         aliases:

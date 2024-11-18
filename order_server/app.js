@@ -1,11 +1,21 @@
 const express = require("express");
-const axios = require("axios"); // For querying the catalog server
+const axios = require("axios");
 const app = express();
 const PORT = 8081;
 app.use(express.json());
 
-// Catalog server URL
-const CATALOG_SERVER_URL = "http://catalog-server:3000";
+const CATALOG_SERVER_URLS = [
+  "http://catalog-server-1:3000",
+  "http://catalog-server-2:3000",
+];
+let currentCatalogServerIndex = 0;
+
+function getCatalogServerURL() {
+  const url = CATALOG_SERVER_URLS[currentCatalogServerIndex];
+  currentCatalogServerIndex =
+    (currentCatalogServerIndex + 1) % CATALOG_SERVER_URLS.length;
+  return url;
+}
 
 app.get("/api/v1/bazar", async (req, res) => {
   res.status(200).json("Welcome to Bazar from order server.😁");
@@ -14,9 +24,10 @@ app.get("/api/v1/bazar", async (req, res) => {
 // Purchase a book
 app.post("/api/v1/purchase/:id", async (req, res) => {
   const id = parseInt(req.params.id);
+  const catalogURL = getCatalogServerURL();
 
   try {
-    const response = await axios.get(`${CATALOG_SERVER_URL}/api/v1/info/${id}`);
+    const response = await axios.get(`${catalogURL}/api/v1/info/${id}`);
     const book = response.data;
 
     if (!book) {
@@ -25,7 +36,7 @@ app.post("/api/v1/purchase/:id", async (req, res) => {
 
     if (book.stock > 0) {
       // Decrement stock
-      await axios.patch(`${CATALOG_SERVER_URL}/api/v1/reduce`, {
+      await axios.patch(`${catalogURL}/api/v1/reduce`, {
         id: id,
         stock: -1,
       });
@@ -43,5 +54,5 @@ app.post("/api/v1/purchase/:id", async (req, res) => {
 
 // Start the order server
 app.listen(PORT, () => {
-  console.log(`Order server is running on port ${PORT}`);
+  console.log(`Order server is running on port ${PORT}...`);
 });
