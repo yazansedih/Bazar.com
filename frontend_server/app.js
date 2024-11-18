@@ -1,26 +1,34 @@
 const express = require("express");
 const axios = require("axios");
 const app = express();
-const PORT = 8082;
 
 app.use(express.json());
 
-// catalog servers for load balancing
+let currentCatalogServerIndex = 0;
+let currentOrderServerIndex = 0;
 const CATALOG_SERVER_URLS = [
   "http://catalog-server-1:3000",
   "http://catalog-server-2:3000",
 ];
-let currentCatalogServerIndex = 0;
-
-// order servers for load balancing
 const ORDER_SERVER_URLS = [
   "http://order-server-1:8081",
   "http://order-server-2:8081",
 ];
-let currentOrderServerIndex = 0;
-
 const cache = {};
 const CACHE_EXPIRATION = 60 * 1000;
+
+// 1) GLOBAL MIDDLEWARES
+function checkCache(req, res, next) {
+  const key = req.originalUrl;
+
+  if (cache[key] && Date.now() - cache[key].timestamp < CACHE_EXPIRATION) {
+    console.log(`Cache hit for key: ${key}`);
+    return res.json(cache[key].data);
+  }
+
+  console.log(`Cache miss for key: ${key}`);
+  next();
+}
 
 function getCatalogServerURL() {
   const url = CATALOG_SERVER_URLS[currentCatalogServerIndex];
@@ -38,21 +46,45 @@ function getOrderServerURL() {
   return url;
 }
 
+// 3) ROUTES
 app.get("/api/v1/bazar", async (req, res) => {
   res.status(200).json("Welcome to Bazar from frontend server.😁");
 });
 
-function checkCache(req, res, next) {
-  const key = req.originalUrl;
+app.post("/api/v1/books", async (req, res) => {
+  const title = req.body.title;
+  const stock = req.body.stock;
+  const cost = req.body.cost;
+  const topic = req.body.topic;
 
-  if (cache[key] && Date.now() - cache[key].timestamp < CACHE_EXPIRATION) {
-    console.log(`Cache hit for key: ${key}`);
-    return res.json(cache[key].data);
+  try {
+    const catalogURL = getCatalogServerURL();
+    const response = await axios.post(`${catalogURL}/api/v1/books`, {
+      title,
+      stock,
+      cost,
+      topic,
+    });
+
+    delete cache[`/api/v1/allBooks`];
+    res.status(200).json(response.data);
+  } catch (error) {
+    res.status(500).json({ message: "Error processing create.💥" });
   }
+});
 
-  console.log(`Cache miss for key: ${key}`);
-  next();
-}
+app.get("/api/v1/allBooks", async (req, res) => {
+  try {
+    const catalogURL = getCatalogServerURL();
+    results = await axios.get(`${catalogURL}/api/v1/allBooks`);
+
+    // Cache the results
+    cache[cacheKey] = { data: results.data, timestamp: Date.now() };
+    res.json(results.data);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching search results.💥" });
+  }
+});
 
 app.get("/api/v1/search", checkCache, async (req, res) => {
   const { title, topic } = req.query;
@@ -143,6 +175,8 @@ app.post("/api/v1/purchase/:id", async (req, res) => {
   }
 });
 
+// 3) SERVER
+const PORT = 8082;
 app.listen(PORT, () => {
-  console.log(`Frontend server is running on port ${PORT}`);
+  console.log(`Frontend server is running on port ${PORT}...`);
 });

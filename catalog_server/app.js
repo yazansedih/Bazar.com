@@ -1,44 +1,55 @@
 import mongoose from "mongoose";
 import express from "express";
+import dotenv from "dotenv";
+import Book from "./models/bookModel.js";
+
+dotenv.config();
 
 const app = express();
-const PORT = 3000;
-
-// MongoDB connection
-mongoose
-  .connect(
-    "mongodb+srv://Abdallah:12345@cluster0.njict.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0"
-  )
-  .then(() => console.log("Connected to MongoDB."))
-  .catch((error) => console.error("Error connecting to MongoDB:", error));
-
 app.use(express.json());
 
-//schema for the book collection
-const bookSchema = new mongoose.Schema({
-  _id: Number,
-  title: String,
-  stock: Number,
-  cost: Number,
-  topic: String,
-});
+const DB = process.env.DATABASE.replace(
+  "<PASSWORD>",
+  process.env.DATABASE_PASSWORD
+);
 
-const Book = mongoose.model("Book", bookSchema);
+mongoose
+  .connect(DB)
+  .then(() => {
+    console.log("DB connection successful!");
+  })
+  .catch((err) => {
+    console.error("Error connecting to DB:", err);
+  });
 
 app.get("/api/v1/bazar", (req, res) => {
   res.status(200).json("Welcome to Bazar from catalog server.😁");
 });
 
-app.get("/api/v1/books", async (req, res) => {
+app.post("/api/v1/books", async (req, res) => {
+  const newBook = await Book.create({
+    title: req.body.title,
+    stock: req.body.stock,
+    cost: req.body.cost,
+    topic: req.body.topic,
+  });
+  res.status(201).json({
+    message: "New book added successfully.",
+    book: newBook,
+  });
+});
+
+app.get("/api/v1/allBooks", async (req, res) => {
   try {
     const books = await Book.find();
-    res.json(books);
+    res.status(200).json(books);
   } catch (error) {
     console.error("Error fetching books:", error);
     res.status(500).json({ message: "Error fetching books.💥" });
   }
 });
 
+// Search books by title or topic
 app.get("/api/v1/search", async (req, res) => {
   const { title, topic } = req.query;
 
@@ -55,15 +66,12 @@ app.get("/api/v1/search", async (req, res) => {
   }
 });
 
+// Get book information by ID
 app.get("/api/v1/info/:id", async (req, res) => {
-  const bookId = parseInt(req.params.id, 10);
-
-  if (isNaN(bookId)) {
-    return res.status(400).json({ message: "Invalid book ID" });
-  }
+  const bookId = req.params.id;
 
   try {
-    const book = await Book.findOne({ _id: bookId });
+    const book = await Book.findById(bookId);
 
     if (!book) {
       return res.status(404).json({ message: "Book not found" });
@@ -80,16 +88,8 @@ app.get("/api/v1/info/:id", async (req, res) => {
 app.put("/api/v1/update", async (req, res) => {
   const { id, stock } = req.body;
 
-  if (isNaN(id) || stock == null) {
-    return res.status(400).json({ message: "Invalid book ID or stock value" });
-  }
-
   try {
-    const book = await Book.findOneAndUpdate(
-      { _id: id },
-      { stock },
-      { new: true }
-    );
+    const book = await Book.findByIdAndUpdate(id, { stock }, { new: true });
     if (book) {
       res.json({ message: "Stock updated.👍", book });
     } else {
@@ -105,16 +105,8 @@ app.put("/api/v1/update", async (req, res) => {
 app.put("/api/v1/update/cost", async (req, res) => {
   const { id, cost } = req.body;
 
-  if (isNaN(id) || cost == null) {
-    return res.status(400).json({ message: "Invalid book ID or cost value" });
-  }
-
   try {
-    const book = await Book.findOneAndUpdate(
-      { _id: id },
-      { cost },
-      { new: true }
-    );
+    const book = await Book.findByIdAndUpdate(id, { cost }, { new: true });
     if (book) {
       res.json({ message: "Cost updated.👍", book });
     } else {
@@ -130,12 +122,8 @@ app.put("/api/v1/update/cost", async (req, res) => {
 app.patch("/api/v1/reduce", async (req, res) => {
   const { id } = req.body;
 
-  if (isNaN(id)) {
-    return res.status(400).json({ message: "Invalid book ID" });
-  }
-
   try {
-    const book = await Book.findOne({ _id: id });
+    const book = await Book.findById(id);
     if (book) {
       book.stock -= 1;
       await book.save();
@@ -149,7 +137,8 @@ app.patch("/api/v1/reduce", async (req, res) => {
   }
 });
 
-// Start the catalog server
-app.listen(PORT, () => {
-  console.log(`Catalog server is running on port ${PORT}`);
+// export default app;
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Catalog server is running on port ${port}...`);
 });
